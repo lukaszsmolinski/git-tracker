@@ -11,6 +11,6 @@ class TrackedRepository(Base):
     repository_id = Column(
         UUID(as_uuid=True), ForeignKey("repositories.id"), primary_key=True
     )
-    repository_collection_id = Column(
+    collection_id = Column(
         UUID(as_uuid=True), ForeignKey("collections.id"), primary_key=True
     )

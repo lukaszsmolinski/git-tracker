@@ -24,9 +24,9 @@ async def add(*, db: Session, name: str, owner: str) -> Repository:
         db.add(repo)
         db.commit()
 
-    update(db=db, repo=repo)
-    db.refresh(repository)
-    return repository
+    await update(db=db, repo=repo)
+    db.refresh(repo)
+    return repo
 
 
 async def update(*, db: Session, repo: Repository) -> None:

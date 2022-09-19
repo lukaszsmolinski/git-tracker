@@ -1,4 +1,5 @@
 import os
+import sys
 
 from pydantic import BaseSettings
 
@@ -14,7 +15,8 @@ class Settings(BaseSettings):
 
     class Config:
         case_sensitive = False
-        env_file = '.env'
-        env_file_encoding = 'utf-8'
+        env_file = ".env" if "pytest" not in sys.modules else ".env.test"
+        env_file_encoding = "utf-8"
+
 
 settings = Settings()
