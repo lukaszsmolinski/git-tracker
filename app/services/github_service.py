@@ -1,9 +1,7 @@
-from os import environ
 from aiohttp import BasicAuth, ClientSession
 from fastapi import HTTPException
 
 from app.config import settings
-
 
 BASE_URL = "https://api.github.com"
 
@@ -37,7 +35,7 @@ def _default_client():
 
 async def _handle_response(response):
     """If request was successful, returns response content. If it wasn't, 
-       aborts with appropriate message and code 503. 
+       throws HTTPException with appropriate message and code 503. 
     """
     if response.status == 200:
         return await response.json()

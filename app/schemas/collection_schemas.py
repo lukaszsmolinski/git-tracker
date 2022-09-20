@@ -3,6 +3,7 @@ from uuid import UUID
 from datetime import datetime
 
 from .repository_schemas import Repository
+from app.models.repository import Provider
 
 
 class Collection(BaseModel):
@@ -34,12 +35,14 @@ class CollectionCreated(BaseModel):
 class CollectionAddRepository(BaseModel):
     repository_name: str
     repository_owner: str
+    provider: Provider
     token: str | None
 
 
 class CollectionRemoveRepository(BaseModel):
     repository_name: str
     repository_owner: str
+    provider: Provider
     token: str | None
 
 

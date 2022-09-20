@@ -48,7 +48,7 @@ async def add_repository_to_collection(
     collection_in: CollectionAddRepository
 ):
     collection = await get_collection(db=db, collection_id=collection_id)
-    return await collection_service.add(
+    return await collection_service.add_repository(
         db=db, 
         collection=collection, 
         collection_in=collection_in
@@ -63,7 +63,7 @@ async def remove_repository_from_collection(
     collection_in: CollectionRemoveRepository
 ):
     collection = await get_collection(db=db, collection_id=collection_id)
-    return collection_service.remove(
+    return collection_service.remove_repository(
         db=db, 
         collection=collection, 
         collection_in=collection_in

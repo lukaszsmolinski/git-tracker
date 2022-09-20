@@ -61,7 +61,8 @@ async def test_add_repository(db):
 
     collection_in = CollectionAddRepository(
         repository_name="Hello-World", 
-        repository_owner="octocat"
+        repository_owner="octocat",
+        provider="github"
     )
     collection = await collection_service.add_repository(
         db=db, 
@@ -84,6 +85,7 @@ async def test_add_repository_using_correct_token(db):
     collection_in = CollectionAddRepository(
         repository_name="Hello-World", 
         repository_owner="octocat",
+        provider="github",
         token=collection.token
     )
     collection = await collection_service.add_repository(
@@ -106,7 +108,8 @@ async def test_add_repository_twice(db):
 
     collection_in = CollectionAddRepository(
         repository_name="Hello-World", 
-        repository_owner="octocat"
+        repository_owner="octocat",
+        provider="github"
     )
     await collection_service.add_repository(
         db=db, 
@@ -131,7 +134,8 @@ async def test_add_repository_twice(db):
             CollectionCreate(name="collection1", protected=False), 
             CollectionAddRepository(
                 repository_name="does-not-exist", 
-                repository_owner="fsjsdfkjdsfadasf"
+                repository_owner="fsjsdfkjdsfadasf",
+                provider="github"
             ),
             404
         ],
@@ -140,6 +144,7 @@ async def test_add_repository_twice(db):
             CollectionAddRepository(
                 repository_name="Hello-World", 
                 repository_owner="octocat",
+                provider="github",
                 token=None
             ),
             401
@@ -149,6 +154,7 @@ async def test_add_repository_twice(db):
             CollectionAddRepository(
                 repository_name="Hello-World", 
                 repository_owner="octocat",
+                provider="github",
                 token=str(uuid.uuid4())
             ),
             401
@@ -184,7 +190,8 @@ async def test_remove_repository(db):
     )
     collection_in_add = CollectionAddRepository(
         repository_name="Hello-World", 
-        repository_owner="octocat"
+        repository_owner="octocat",
+        provider="github"
     )
     collection = await collection_service.add_repository(
         db=db, 
@@ -212,6 +219,7 @@ async def test_remove_repository_using_wrong_token(db):
     collection_in_add = CollectionAddRepository(
         repository_name="Hello-World", 
         repository_owner="octocat",
+        provider="github",
         token=collection.token
     )
     collection = await collection_service.add_repository(
@@ -244,6 +252,7 @@ def test_remove_repository_that_was_not_added(db):
     collection_in_remove = CollectionRemoveRepository(
         repository_name="Hello-World", 
         repository_owner="octocat",
+        provider="github"
     )
     with pytest.raises(HTTPException) as excinfo:
         collection_service.remove_repository(

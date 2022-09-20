@@ -59,7 +59,8 @@ async def add_repository(
     repository = await repository_service.add(
         db=db,
         name=collection_in.repository_name, 
-        owner=collection_in.repository_owner
+        owner=collection_in.repository_owner,
+        provider=collection_in.provider
     )
 
     is_not_already_tracked = (
@@ -91,7 +92,8 @@ def remove_repository(
     repository = repository_service.get(
         db=db, 
         name=collection_in.repository_name, 
-        owner=collection_in.repository_owner
+        owner=collection_in.repository_owner,
+        provider=collection_in.provider
     )
     if repository is None:
         raise HTTPException(status_code=404, detail="Tracked repository not found.")
