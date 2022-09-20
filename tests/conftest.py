@@ -9,7 +9,7 @@ from app.database import engine, SessionLocal, Base
 @pytest.fixture(scope="function")
 def db():
     connection = engine.connect()
-    transaction = connection.begin()
+    connection.begin()
     db = SessionLocal(bind=connection)
     yield db
     db.rollback()

@@ -1,9 +1,9 @@
+from datetime import datetime, timezone
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from datetime import datetime, timezone
 
 from . import github_service, gitlab_service
-from ..models.repository import Repository, Provider
+from app.models.repository import Repository, Provider
 
 
 def get(
@@ -16,6 +16,7 @@ def get(
         .filter(Repository.provider == provider)
         .one_or_none()
     )
+
 
 async def add(
     *, db: Session, name: str, owner: str, provider: Provider

@@ -1,12 +1,11 @@
+from uuid import uuid4, UUID
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from uuid import uuid4, UUID
 
-from . import repository_service 
-from ..models.collection import Collection
-from ..models.tracked_repository import TrackedRepository
-from ..schemas.collection_schemas import ( 
-    CollectionCreated, 
+from . import repository_service
+from app.models.collection import Collection
+from app.models.tracked_repository import TrackedRepository
+from app.schemas.collection_schemas import (
     CollectionCreate,
     CollectionAddRepository,
     CollectionRemoveRepository,
@@ -50,15 +49,15 @@ async def get_and_update(
 
 async def add_repository(
     *,
-    db: Session, 
-    collection: Collection, 
+    db: Session,
+    collection: Collection,
     collection_in: CollectionAddRepository
 ) -> Collection:
     _assert_authorized(collection, collection_in.token)
 
     repository = await repository_service.add(
         db=db,
-        name=collection_in.repository_name, 
+        name=collection_in.repository_name,
         owner=collection_in.repository_owner,
         provider=collection_in.provider
     )
@@ -83,20 +82,21 @@ async def add_repository(
 
 def remove_repository(
     *,
-    db: Session, 
-    collection: Collection, 
+    db: Session,
+    collection: Collection,
     collection_in: CollectionRemoveRepository
 ) -> Collection:
     _assert_authorized(collection, collection_in.token)
 
     repository = repository_service.get(
-        db=db, 
-        name=collection_in.repository_name, 
+        db=db,
+        name=collection_in.repository_name,
         owner=collection_in.repository_owner,
         provider=collection_in.provider
     )
     if repository is None:
-        raise HTTPException(status_code=404, detail="Tracked repository not found.")
+        raise HTTPException(
+            status_code=404, detail="Tracked repository not found.")
 
     tracked_repository = (
         db.query(TrackedRepository)
@@ -105,7 +105,8 @@ def remove_repository(
         .one_or_none()
     )
     if tracked_repository is None:
-        raise HTTPException(status_code=404, detail="Tracked repository not found.")
+        raise HTTPException(
+            status_code=404, detail="Tracked repository not found.")
 
     db.delete(tracked_repository)
     db.commit()

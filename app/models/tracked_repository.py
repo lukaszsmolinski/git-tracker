@@ -1,8 +1,7 @@
-from sqlalchemy import Column, String, ForeignKey
+from sqlalchemy import Column, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
-import uuid
 
-from ..database import Base
+from app.database import Base
 
 
 class TrackedRepository(Base):

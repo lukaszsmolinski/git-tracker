@@ -1,6 +1,6 @@
-from pydantic import BaseModel
-from uuid import UUID
 from datetime import datetime
+from uuid import UUID
+from pydantic import BaseModel
 
 from .repository_schemas import Repository
 from app.models.repository import Provider

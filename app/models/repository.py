@@ -1,10 +1,10 @@
-from sqlalchemy import Column, DateTime, String, Enum
-from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID
-import uuid
 import enum
+import uuid
+from sqlalchemy import Column, DateTime, String, Enum
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
-from ..database import Base
+from app.database import Base
 
 
 class Provider(str, enum.Enum):
@@ -22,7 +22,7 @@ class Repository(Base):
     last_commit_at = Column(DateTime, nullable=True)
 
     collections = relationship(
-        "Collection", 
-        secondary="tracked_repositories", 
+        "Collection",
+        secondary="tracked_repositories",
         back_populates="repositories"
     )

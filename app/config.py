@@ -1,11 +1,10 @@
-import os
 import sys
 
 from pydantic import BaseSettings
 
 
 class Settings(BaseSettings):
-    github_username: str | None 
+    github_username: str | None
     github_token: str | None
     postgres_user: str
     postgres_password: str
