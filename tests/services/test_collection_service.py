@@ -1,5 +1,5 @@
-import pytest
 import uuid
+import pytest
 from fastapi import HTTPException
 
 from app.services import collection_service
@@ -53,6 +53,30 @@ def test_get_when_collection_does_not_exist(db):
 
 
 @pytest.mark.asyncio
+async def test_get_when_collection_not_empty(db):
+    collection = collection_service.create(
+        db=db,
+        collection_in=CollectionCreate(name="collection1", protected=False)
+    )
+
+    collection_in = CollectionAddRepository(
+        repository_name="Hello-World",
+        repository_owner="octocat",
+        provider="github"
+    )
+    collection = await collection_service.add_repository(
+        db=db,
+        collection=collection,
+        collection_in=collection_in
+    )
+
+    assert len(collection.repositories) == 1
+    assert collection.repositories[0].name == collection_in.repository_name
+    assert collection.repositories[0].owner == collection_in.repository_owner
+    assert collection.repositories[0].provider == "github"
+
+
+@pytest.mark.asyncio
 async def test_add_repository(db):
     collection = collection_service.create(
         db=db,
@@ -71,8 +95,9 @@ async def test_add_repository(db):
     )
 
     assert len(collection.repositories) == 1
-    assert collection.repositories[0].name == "Hello-World"
-    assert collection.repositories[0].owner == "octocat"
+    assert collection.repositories[0].name == collection_in.repository_name
+    assert collection.repositories[0].owner == collection_in.repository_owner
+    assert collection.repositories[0].provider == "github"
 
 
 @pytest.mark.asyncio
@@ -95,8 +120,9 @@ async def test_add_repository_using_correct_token(db):
     )
 
     assert len(collection.repositories) == 1
-    assert collection.repositories[0].name == "Hello-World"
-    assert collection.repositories[0].owner == "octocat"
+    assert collection.repositories[0].name == collection_in.repository_name
+    assert collection.repositories[0].owner == collection_in.repository_owner
+    assert collection.repositories[0].provider == "github"
 
 
 @pytest.mark.asyncio
@@ -123,8 +149,8 @@ async def test_add_repository_twice(db):
     )
 
     assert len(collection.repositories) == 1
-    assert collection.repositories[0].name == "Hello-World"
-    assert collection.repositories[0].owner == "octocat"
+    assert collection.repositories[0].name == collection_in.repository_name
+    assert collection.repositories[0].owner == collection_in.repository_owner
 
 
 @pytest.mark.parametrize(
@@ -200,7 +226,8 @@ async def test_remove_repository(db):
     )
 
     collection_in_remove = CollectionRemoveRepository(
-        **collection_in_add.dict())
+        **collection_in_add.dict()
+    )
     collection = collection_service.remove_repository(
         db=db,
         collection=collection,
@@ -230,7 +257,8 @@ async def test_remove_repository_using_wrong_token(db):
     )
 
     collection_in_remove = CollectionRemoveRepository(
-        **collection_in_add.dict())
+        **collection_in_add.dict()
+    )
     collection_in_remove.token = str(uuid.uuid4())
     with pytest.raises(HTTPException) as excinfo:
         collection_service.remove_repository(
@@ -244,7 +272,8 @@ async def test_remove_repository_using_wrong_token(db):
     assert len(collection.repositories) == 1
 
 
-def test_remove_repository_that_was_not_added(db):
+@pytest.mark.parametrize("provider", ["github", "gitlab"])
+def test_remove_repository_that_was_not_added(db, provider):
     collection_in_create = CollectionCreate(
         name="collection1", protected=False
     )
@@ -256,7 +285,7 @@ def test_remove_repository_that_was_not_added(db):
     collection_in_remove = CollectionRemoveRepository(
         repository_name="Hello-World",
         repository_owner="octocat",
-        provider="github"
+        provider=provider
     )
     with pytest.raises(HTTPException) as excinfo:
         collection_service.remove_repository(
