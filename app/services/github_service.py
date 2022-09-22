@@ -35,7 +35,7 @@ def _default_client():
 
 async def _handle_response(response):
     """If request was successful, returns response content. If it wasn't,
-       throws HTTPException with appropriate message and code 503.
+       raises HTTPException with appropriate message and code 503.
     """
     if response.status == 200:
         return await response.json()

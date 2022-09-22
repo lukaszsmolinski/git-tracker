@@ -9,6 +9,12 @@ from app.models.repository import Repository, Provider
 def get(
     *, db: Session, name: str, owner: str, provider: Provider
 ) -> Repository | None:
+    """Returns repository with given name, owner and provider or None if it 
+       is doesn't exist in the database.
+
+    Returned repository may not be up to date, as it only contains data that
+    is currently present in the database.
+    """
     return (
         db.query(Repository)
         .filter(Repository.name == name)
@@ -21,6 +27,11 @@ def get(
 async def add(
     *, db: Session, name: str, owner: str, provider: Provider
 ) -> Repository:
+    """Adds a repository to the database.
+
+    If it doesn't exist, raises HTTPException. If it's already added, 
+    does nothing.
+    """
     await _assert_exists(name=name, owner=owner, provider=provider)
 
     repo = get(db=db, name=name, owner=owner, provider=provider)
@@ -34,6 +45,10 @@ async def add(
 
 
 async def update(*, db: Session, repo: Repository) -> None:
+    """Updates repository data.
+    
+    If the repository no longer exists, removes it.
+    """
     match repo.provider:
         case Provider.GITHUB:
             await _update_github(db=db, repo=repo)
@@ -42,6 +57,7 @@ async def update(*, db: Session, repo: Repository) -> None:
 
 
 async def _update_github(*, db: Session, repo: Repository) -> None:
+    """Updates GitHub repository or removes it if it no longer exists."""
     data = await github_service.get(
         endpoint=f"/repos/{repo.owner}/{repo.name}/commits?per_page=1"
     )
@@ -54,6 +70,7 @@ async def _update_github(*, db: Session, repo: Repository) -> None:
 
 
 async def _update_gitlab(*, db: Session, repo: Repository) -> None:
+    """Updates GitLab repository or removes it if it no longer exists."""
     data = await gitlab_service.get(
         endpoint=f"/projects/{repo.owner}%2F{repo.name}/repository/commits?per_page=1"
     )
@@ -68,6 +85,10 @@ async def _update_gitlab(*, db: Session, repo: Repository) -> None:
 
 
 async def _assert_exists(*, name: str, owner: str, provider: Provider) -> None:
+    """Checks if repository with given name, owner and provider exists.
+    
+    If it doesn't raises HTTPException.
+    """
     data = None
     match provider:
         case Provider.GITHUB:
