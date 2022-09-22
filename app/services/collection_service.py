@@ -65,8 +65,8 @@ async def add_repository(
 ) -> Collection:
     """Adds repository to collection.
 
-    If the repository doesn't exist or authorization fails, an HTTPException 
-    is raised. If the repository has already been added to the collection, 
+    If the repository doesn't exist or authorization fails, an HTTPException
+    is raised. If the repository has already been added to the collection,
     nothing happens.
     """
     _assert_authorized(collection, collection_in.token)
@@ -104,8 +104,8 @@ def remove_repository(
 ) -> Collection:
     """Removes repository from collection.
 
-    If the repository doesn't exist, it hasn't been added to the collection 
-    or authorization fails, an HTTPException is raised. 
+    If the repository doesn't exist, it hasn't been added to the collection
+    or authorization fails, an HTTPException is raised.
     """
     _assert_authorized(collection, collection_in.token)
 
@@ -140,7 +140,7 @@ def delete(
     *, db: Session, collection: Collection, collection_in: CollectionDelete
 ) -> None:
     """Deletes coollection.
-    
+
     If authorization fails, an HTTPException is raised.
     """
     _assert_authorized(collection, collection_in.token)
@@ -150,7 +150,7 @@ def delete(
 
 def _assert_authorized(collection: Collection, token: str | None) -> None:
     """Checks if the token is valid for the collection.
-    
+
     If the token is invalid, an HTTPException is raised.
     """
     if collection.protected and collection.token != token:

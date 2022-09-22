@@ -234,7 +234,7 @@ async def test_update_gitlab_when_repo_no_longer_exists(db):
 )
 @pytest.mark.asyncio
 async def test_assert_exists_when_repo_exists(db, data):
-    await repository_service._assert_exists(**data)
+    await repository_service._assert_exists(db=db, **data)
 
 
 @pytest.mark.parametrize(
@@ -255,6 +255,6 @@ async def test_assert_exists_when_repo_exists(db, data):
 @pytest.mark.asyncio
 async def test_assert_exists_when_repo_does_not_exist(db, data):
     with pytest.raises(HTTPException) as excinfo:
-        await repository_service._assert_exists(**data)
+        await repository_service._assert_exists(db=db, **data)
 
     assert excinfo.value.status_code == 404
