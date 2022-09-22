@@ -22,14 +22,14 @@ async def add(
     *, db: Session, name: str, owner: str, provider: Provider
 ) -> Repository:
     await _assert_exists(name=name, owner=owner, provider=provider)
+
     repo = get(db=db, name=name, owner=owner, provider=provider)
     if repo is None:
         repo = Repository(name=name, owner=owner, provider=provider)
         db.add(repo)
         db.commit()
+        db.refresh(repo)
 
-    await update(db=db, repo=repo)
-    db.refresh(repo)
     return repo
 
 
