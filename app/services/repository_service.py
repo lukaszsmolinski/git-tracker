@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from . import github_service, gitlab_service
+from . import provider_service
 from app.models.repository import Repository, Provider
 
 
@@ -49,40 +49,25 @@ async def update(*, db: Session, repo: Repository) -> None:
 
     If the repository no longer exists, removes it.
     """
-    match repo.provider:
-        case Provider.GITHUB:
-            await _update_github(db=db, repo=repo)
-        case Provider.GITLAB:
-            await _update_gitlab(db=db, repo=repo)
+    if Provider.GITHUB == repo.provider:
+        endpoint = f"/repos/{repo.owner}/{repo.name}/commits?per_page=1"
+    elif Provider.GITLAB == repo.provider:
+        endpoint = f"/projects/{repo.owner}%2F{repo.name}/repository/commits?per_page=1"
 
-
-async def _update_github(*, db: Session, repo: Repository) -> None:
-    """Updates GitHub repository or removes it if it no longer exists."""
-    data = await github_service.get(
-        db=db,
-        endpoint=f"/repos/{repo.owner}/{repo.name}/commits?per_page=1"
+    data = await provider_service.get(
+        db=db, provider=repo.provider, endpoint=endpoint
     )
     if data is None:
         db.delete(repo)
     elif len(data) > 0:
-        date = data[0]["commit"]["author"]["date"]
-        repo.last_commit_at = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ")
-    db.commit()
-
-
-async def _update_gitlab(*, db: Session, repo: Repository) -> None:
-    """Updates GitLab repository or removes it if it no longer exists."""
-    data = await gitlab_service.get(
-        db=db,
-        endpoint=f"/projects/{repo.owner}%2F{repo.name}/repository/commits?per_page=1"
-    )
-    if data is None:
-        db.delete(repo)
-    elif len(data) > 0:
-        date = data[0]["committed_date"]
-        repo.last_commit_at = (
-            datetime.fromisoformat(date).astimezone(timezone.utc)
-        )
+        if Provider.GITHUB == repo.provider:
+            date = data[0]["commit"]["author"]["date"]
+            repo.last_commit_at = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ")
+        elif Provider.GITLAB == repo.provider:
+            date = data[0]["committed_date"]
+            repo.last_commit_at = (
+                datetime.fromisoformat(date).astimezone(timezone.utc)
+            )
     db.commit()
 
 
@@ -93,15 +78,11 @@ async def _assert_exists(
 
     If it doesn't raises HTTPException.
     """
-    data = None
-    match provider:
-        case Provider.GITHUB:
-            data = await github_service.get(
-                db=db, endpoint=f"/repos/{owner}/{name}"
-            )
-        case Provider.GITLAB:
-            data = await gitlab_service.get(
-                db=db, endpoint=f"/projects/{owner}%2F{name}"
-            )
+    if Provider.GITHUB == provider:
+        endpoint = f"/repos/{owner}/{name}"
+    elif Provider.GITLAB == provider:
+        endpoint = f"/projects/{owner}%2F{name}"
+
+    data = await provider_service.get(db=db, provider=provider, endpoint=endpoint)
     if data is None:
         raise HTTPException(status_code=404, detail="Repository not found.")

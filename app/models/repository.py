@@ -1,15 +1,10 @@
-import enum
 import uuid
 from sqlalchemy import Column, DateTime, String, Enum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.database import Base
-
-
-class Provider(str, enum.Enum):
-    GITHUB = "github"
-    GITLAB = "gitlab"
+from app.enums import Provider
 
 
 class Repository(Base):

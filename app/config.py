@@ -6,6 +6,8 @@ from pydantic import BaseSettings
 class Settings(BaseSettings):
     github_username: str | None
     github_token: str | None
+    gitlab_username: str | None
+    gitlab_token: str | None
     postgres_user: str
     postgres_password: str
     postgres_server: str = "db"

@@ -13,6 +13,15 @@ def get(*, db: Session, url: str) -> CachedResponse | None:
     )
 
 
+def get_json_dict(*, db: Session, url: str) -> CachedResponse | None:
+    """Returns cached response json (as dictionary) or None if the cache
+       doesn't exist.
+    """
+    cache = get(db=db, url=url)
+    json_dict = loads(cache.json) if cache.json is not None else None
+    return json_dict
+
+
 def is_cache_valid(
     *, db: Session, cache: CachedResponse | None, seconds: int
 ) -> bool:
@@ -26,7 +35,7 @@ def is_cache_valid(
 def update(
     *, db: Session, url: str, json: str | None, etag: str
 ) -> CachedResponse:
-    """Updates cache for given url with json and etag.
+    """Updates cache for given url.
 
     If the cache for given url already exists, then it's deleted.
     """

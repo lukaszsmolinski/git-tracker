@@ -1,7 +1,7 @@
 from datetime import datetime
 from pydantic import BaseModel
 
-from app.models.repository import Provider
+from app.enums import Provider
 
 
 class Repository(BaseModel):

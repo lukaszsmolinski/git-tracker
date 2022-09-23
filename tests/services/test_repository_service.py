@@ -1,7 +1,8 @@
 import pytest
 from fastapi import HTTPException
 
-from app.models.repository import Provider, Repository
+from app.enums import Provider
+from app.models.repository import Repository
 from app.services import repository_service
 
 
@@ -123,36 +124,22 @@ async def test_add_twice(db, data):
 
 
 @pytest.mark.parametrize(
-    "data, function_mock",
+    "data",
     [
-        [
-            {
-                "name": "Hello-World",
-                "owner": "octocat",
-                "provider": Provider.GITHUB
-            },
-            "app.services.repository_service._update_github"
-        ],
-        [
-            {
-                "name": "gitlab",
-                "owner": "gitlab-org",
-                "provider": Provider.GITLAB
-            },
-            "app.services.repository_service._update_gitlab"
-        ]
+        {
+            "name": "Hello-World",
+            "owner": "octocat",
+            "provider": Provider.GITHUB
+        },
+        {
+            "name": "gitlab",
+            "owner": "gitlab-org",
+            "provider": Provider.GITLAB
+        }
     ]
 )
 @pytest.mark.asyncio
-async def test_update(db, mocker, data, function_mock):
-    mocked_function = mocker.patch(function_mock)
-    repo = await repository_service.add(db=db, **data)
-    await repository_service.update(db=db, repo=repo)
-    mocked_function.assert_called_once()
-
-
-@pytest.mark.asyncio
-async def test_update_github(db):
+async def test_update(db, data):
     data = {
         "name": "Hello-World",
         "owner": "octocat",
@@ -160,15 +147,31 @@ async def test_update_github(db):
     }
     repo = await repository_service.add(db=db, **data)
 
-    await repository_service._update_github(db=db, repo=repo)
+    await repository_service.update(db=db, repo=repo)
     repo = repository_service.get(db=db, **data)
 
     assert repo is not None
     assert repo.last_commit_at is not None
 
 
+@pytest.mark.parametrize(
+    "data",
+    [
+        {
+            "name": "does-not-exist",
+            "owner": "asdfdsasddsfafdsa",
+            "provider": Provider.GITHUB
+        },
+        {
+            "name": "does-not-exist",
+            "owner": "sadkdsaklsdj",
+            "provider": Provider.GITLAB
+        }
+    ]
+)
 @pytest.mark.asyncio
-async def test_update_github_when_repo_no_longer_exists(db):
+async def test_update_when_repo_no_longer_exists(db, data):
+    # Repo doesn't exist so we must add it artificially to the database
     data = {
         "name": "no-longer-exists",
         "owner": "dsdfsdfsd",
@@ -179,40 +182,7 @@ async def test_update_github_when_repo_no_longer_exists(db):
     db.commit()
     db.refresh(repo)
 
-    await repository_service._update_github(db=db, repo=repo)
-
-    assert repository_service.get(db=db, **data) is None
-
-
-@pytest.mark.asyncio
-async def test_update_gitlab(db):
-    data = {
-        "name": "gitlab",
-        "owner": "gitlab-org",
-        "provider": Provider.GITLAB
-    }
-    repo = await repository_service.add(db=db, **data)
-
-    await repository_service._update_gitlab(db=db, repo=repo)
-    repo = repository_service.get(db=db, **data)
-
-    assert repo is not None
-    assert repo.last_commit_at is not None
-
-
-@pytest.mark.asyncio
-async def test_update_gitlab_when_repo_no_longer_exists(db):
-    data = {
-        "name": "no-longer-exists",
-        "owner": "dsdfsdfsd",
-        "provider": Provider.GITLAB
-    }
-    repo = Repository(**data)
-    db.add(repo)
-    db.commit()
-    db.refresh(repo)
-
-    await repository_service._update_gitlab(db=db, repo=repo)
+    await repository_service.update(db=db, repo=repo)
 
     assert repository_service.get(db=db, **data) is None
 
