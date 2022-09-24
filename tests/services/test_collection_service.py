@@ -2,7 +2,8 @@ import uuid
 import pytest
 from fastapi import HTTPException
 
-from app.models.repository import Provider
+from app.enums import Provider
+from app.models.collection import Collection
 from app.services import collection_service
 from app.schemas.collection_schemas import (
     CollectionCreate,
@@ -26,10 +27,12 @@ from app.schemas.collection_schemas import (
     ]
 )
 def test_create(db, collection_in, expected):
+    cnt = db.query(Collection).count()
     collection = collection_service.create(db=db, collection_in=collection_in)
 
     assert expected.items() <= collection.__dict__.items()
     assert collection.protected is False or collection.token is not None
+    assert db.query(Collection).count() == cnt + 1
 
 
 @pytest.mark.parametrize(

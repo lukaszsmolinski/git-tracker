@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from json import dumps, loads
 from sqlalchemy.orm import Session
 
 from app.models.cached_response import CachedResponse
@@ -18,24 +19,17 @@ def get_json_dict(*, db: Session, url: str) -> CachedResponse | None:
        doesn't exist.
     """
     cache = get(db=db, url=url)
-    json_dict = loads(cache.json) if cache.json is not None else None
-    return json_dict
-
-
-def is_cache_valid(
-    *, db: Session, cache: CachedResponse | None, seconds: int
-) -> bool:
-    """Checks if cache was created less than given number of seconds ago."""
     return (
-        cache is not None and
-        datetime.utcnow() - timedelta(seconds=seconds) <= cache.created_at
+        loads(cache.json)
+        if cache is not None and cache.json is not None
+        else None
     )
 
 
 def update(
-    *, db: Session, url: str, json: str | None, etag: str
+    *, db: Session, url: str, json: str | None, etag: str | None
 ) -> CachedResponse:
-    """Updates cache for given url.
+    """Updates cache for given url (or creates it if it doesn't exist).
 
     If the cache for given url already exists, then it's deleted.
     """

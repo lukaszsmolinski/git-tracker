@@ -44,9 +44,7 @@ async def _handle_response(
 
     # Return cached response.
     if response.status in [200, 304, 404]:
-        cache = cache_service.get(db=db, url=url)
-        json_dict = loads(cache.json) if cache.json is not None else None
-        return json_dict
+        return cache_service.get_json_dict(db=db, url=url)
 
     _handle_error_code(code=response.status, provider=provider)
 
