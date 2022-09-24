@@ -50,13 +50,12 @@ def _handle_response(
 
 def _get_url(*, endpoint: str, provider: Provider) -> str:
     """Creates an url."""
-    if endpoint[0] != "/":
-        enpoint = "/" + endpoint
+    correct_endpoint = endpoint if endpoint[0] == "/" else "/" + endpoint
 
     if Provider.GITHUB == provider:
-        return "https://api.github.com" + endpoint
+        return "https://api.github.com" + correct_endpoint
     if Provider.GITLAB == provider:
-        return "https://gitlab.com/api/v4" + endpoint
+        return "https://gitlab.com/api/v4" + correct_endpoint
 
 
 def _get_client(*, db: Session, provider: Provider, url: str) -> AsyncClient:
