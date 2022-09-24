@@ -21,7 +21,7 @@ from app.services import repository_service
         }
     ]
 )
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_get(db, data):
     await repository_service.add(db=db, **data)
 
@@ -66,7 +66,7 @@ def test_get_when_does_not_exist(db, data):
         }
     ]
 )
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_add(db, data):
     repo = await repository_service.add(db=db, **data)
 
@@ -89,7 +89,7 @@ async def test_add(db, data):
         }
     ]
 )
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_add_when_repo_does_not_exist(db, data):
     with pytest.raises(HTTPException) as excinfo:
         await repository_service.add(db=db, **data)
@@ -113,7 +113,7 @@ async def test_add_when_repo_does_not_exist(db, data):
         }
     ]
 )
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_add_twice(db, data):
     rows_before = db.query(Repository).count()
     await repository_service.add(db=db, **data)
@@ -138,7 +138,7 @@ async def test_add_twice(db, data):
         }
     ]
 )
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_update(db, data):
     data = {
         "name": "Hello-World",
@@ -169,7 +169,7 @@ async def test_update(db, data):
         }
     ]
 )
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_update_when_repo_no_longer_exists(db, data):
     # Repo doesn't exist so we must add it artificially to the database
     data = {
@@ -202,7 +202,7 @@ async def test_update_when_repo_no_longer_exists(db, data):
         }
     ]
 )
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_assert_exists_when_repo_exists(db, data):
     await repository_service._assert_exists(db=db, **data)
 
@@ -222,7 +222,7 @@ async def test_assert_exists_when_repo_exists(db, data):
         }
     ]
 )
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_assert_exists_when_repo_does_not_exist(db, data):
     with pytest.raises(HTTPException) as excinfo:
         await repository_service._assert_exists(db=db, **data)

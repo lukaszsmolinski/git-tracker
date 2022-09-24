@@ -56,7 +56,7 @@ def test_get_when_collection_does_not_exist(db):
     assert collection is None
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_get_when_collection_not_empty(db):
     collection = collection_service.create(
         db=db,
@@ -80,7 +80,7 @@ async def test_get_when_collection_not_empty(db):
     assert collection.repositories[0].provider == Provider.GITHUB
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_add_repository(db):
     collection = collection_service.create(
         db=db,
@@ -104,7 +104,7 @@ async def test_add_repository(db):
     assert collection.repositories[0].provider == collection_in.provider
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_add_repository_using_correct_token(db):
     collection = collection_service.create(
         db=db,
@@ -129,7 +129,7 @@ async def test_add_repository_using_correct_token(db):
     assert collection.repositories[0].provider == collection_in.provider
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_add_repository_twice(db):
     collection = collection_service.create(
         db=db,
@@ -191,7 +191,7 @@ async def test_add_repository_twice(db):
         ],
     ]
 )
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_add_repository_fail_with_exception(
     db, collection_in_create, collection_in_add, code
 ):
@@ -212,7 +212,7 @@ async def test_add_repository_fail_with_exception(
     assert len(collection.repositories) == 0
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_remove_repository(db):
     collection = collection_service.create(
         db=db,
@@ -241,7 +241,7 @@ async def test_remove_repository(db):
     assert len(collection.repositories) == 0
 
 
-@pytest.mark.asyncio
+@pytest.mark.anyio
 async def test_remove_repository_using_wrong_token(db):
     collection_in_create = CollectionCreate(name="collection1", protected=True)
     collection = collection_service.create(
