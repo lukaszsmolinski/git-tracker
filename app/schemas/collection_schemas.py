@@ -11,7 +11,6 @@ class Collection(BaseModel):
     name: str
     created_at: datetime
     protected: bool
-    repositories: list[Repository]
 
     class Config:
         orm_mode = True

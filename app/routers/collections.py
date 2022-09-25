@@ -13,6 +13,7 @@ from app.schemas.collection_schemas import (
     CollectionAddRepository,
     CollectionRemoveRepository
 )
+from app.schemas.repository_schemas import Repository
 from app.services import collection_service
 
 security = HTTPBearer(auto_error=False)
@@ -40,52 +41,64 @@ async def get_collection(
     )
     if collection is None:
         raise HTTPException(status_code=404, detail="Collection not found.")
+
     return collection
 
 
-@router.post("/{collection_id}/repos", response_model=Collection)
+@router.get("/{collection_id}/repos", response_model=list[Repository])
+async def get_collection_repositories(
+    *, db: Session = Depends(get_db), collection_id: UUID
+):
+    collection = await get_collection(db=db, collection_id=collection_id)
+    return collection.repositories
+
+
+@router.post("/{collection_id}/repos")
 async def add_repository_to_collection(
     *,
-    db: Session = Depends(get_db),
     credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db),
     collection_id: UUID,
     collection_in: CollectionAddRepository
 ):
     collection = await get_collection(db=db, collection_id=collection_id)
     _assert_authorized(collection=collection, credentials=credentials)
-    return await collection_service.add_repository(
+    
+    await collection_service.add_repository(
         db=db,
         collection=collection,
         collection_in=collection_in
     )
 
 
-@router.delete("/{collection_id}/repos", response_model=Collection)
+@router.delete("/{collection_id}/repos/{repository_id}")
 async def remove_repository_from_collection(
     *,
-    db: Session = Depends(get_db),
     credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db),
     collection_id: UUID,
-    collection_in: CollectionRemoveRepository
+    repository_id: UUID
 ):
     collection = await get_collection(db=db, collection_id=collection_id)
     _assert_authorized(collection=collection, credentials=credentials)
-    return collection_service.remove_repository(
+    
+    collection_service.remove_repository(
         db=db,
         collection=collection,
-        collection_in=collection_in
+        repository_id=repository_id
     )
 
 
 @router.delete("/{collection_id}")
 async def delete_collection(
     *,
-    db: Session = Depends(get_db),
     credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db),
     collection_id: UUID
 ):
     collection = await get_collection(db=db, collection_id=collection_id)
     _assert_authorized(collection=collection, credentials=credentials)
+
     collection_service.delete(
         db=db,
         collection=collection
@@ -93,16 +106,16 @@ async def delete_collection(
 
 
 def _assert_authorized(
-    *, 
-    collection: models.collection.Collection, 
+    *,
+    collection: models.collection.Collection,
     credentials: HTTPAuthorizationCredentials
 ) -> None:
     """Checks if the authorization is valid. 
-    
+
     If it isn't, HTTPException is raised.
     """
     hashed = collection.password
     password = credentials.credentials if credentials is not None else None
     if hashed is not None:
-        if not bcrypt.checkpw(password.encode("utf-8"), hashed.encode("utf-8")):
+        if password is None or not bcrypt.checkpw(password.encode("utf-8"), hashed.encode("utf-8")):
             raise HTTPException(status_code=401, detail="Wrong password.")

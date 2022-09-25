@@ -184,13 +184,10 @@ async def test_remove_repository(db):
         collection_in=collection_in_add
     )
 
-    collection_in_remove = CollectionRemoveRepository(
-        **collection_in_add.dict()
-    )
     collection = collection_service.remove_repository(
         db=db,
         collection=collection,
-        collection_in=collection_in_remove
+        repository_id=collection.repositories[0].id
     )
 
     assert len(collection.repositories) == 0
@@ -204,16 +201,11 @@ def test_remove_repository_that_was_not_added(db, provider):
         collection_in=collection_in_create
     )
 
-    collection_in_remove = CollectionRemoveRepository(
-        repository_name="Hello-World",
-        repository_owner="octocat",
-        provider=provider
-    )
     with pytest.raises(HTTPException) as excinfo:
         collection_service.remove_repository(
             db=db,
             collection=collection,
-            collection_in=collection_in_remove
+            repository_id=uuid.uuid4()
         )
 
     db.refresh(collection)

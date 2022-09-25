@@ -105,27 +105,17 @@ def remove_repository(
     *,
     db: Session,
     collection: Collection,
-    collection_in: CollectionRemoveRepository
+    repository_id: UUID
 ) -> Collection:
     """Removes repository from collection.
 
     If the repository doesn't exist or it hasn't been added to the collection, 
     an HTTPException is raised.
     """
-    repository = repository_service.get(
-        db=db,
-        name=collection_in.repository_name,
-        owner=collection_in.repository_owner,
-        provider=collection_in.provider
-    )
-    if repository is None:
-        raise HTTPException(
-            status_code=404, detail="Tracked repository not found.")
-
     tracked_repository = (
         db.query(TrackedRepository)
         .filter(TrackedRepository.collection_id == collection.id)
-        .filter(TrackedRepository.repository_id == repository.id)
+        .filter(TrackedRepository.repository_id == repository_id)
         .one_or_none()
     )
     if tracked_repository is None:

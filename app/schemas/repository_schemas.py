@@ -1,10 +1,12 @@
 from datetime import datetime
+from uuid import UUID
 from pydantic import BaseModel
 
 from app.enums import Provider
 
 
 class Repository(BaseModel):
+    id: UUID
     name: str
     owner: str
     provider: Provider
