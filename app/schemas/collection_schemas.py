@@ -17,34 +17,27 @@ class Collection(BaseModel):
         orm_mode = True
 
 
-class CollectionCreate(BaseModel):
-    name: str
-    protected: bool
-
-
 class CollectionCreated(BaseModel):
     id: UUID
     name: str
     protected: bool
-    token: str | None
 
     class Config:
         orm_mode = True
+
+
+class CollectionCreate(BaseModel):
+    name: str
+    password: str | None
 
 
 class CollectionAddRepository(BaseModel):
     repository_name: str
     repository_owner: str
     provider: Provider
-    token: str | None
 
 
 class CollectionRemoveRepository(BaseModel):
     repository_name: str
     repository_owner: str
     provider: Provider
-    token: str | None
-
-
-class CollectionDelete(BaseModel):
-    token: str | None

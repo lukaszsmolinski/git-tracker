@@ -1,6 +1,6 @@
 from json import dumps, loads
 from fastapi import HTTPException
-from httpx import AsyncClient
+from httpx import AsyncClient, DigestAuth
 from sqlalchemy.orm import Session
 
 from app.enums import Provider
@@ -73,17 +73,11 @@ def _get_client(*, db: Session, provider: Provider, url: str) -> AsyncClient:
 
     if Provider.GITHUB == provider:
         headers["Accept"] = "application/vnd.github.v3+json"
-        auth = (
-            (settings.github_username, settings.github_token)
-            if settings.github_username and settings.github_token
-            else None
-        )
+        if settings.github_username and settings.github_token:
+            auth = DigestAuth(settings.github_username, settings.github_token)
     if Provider.GITLAB == provider:
-        auth = (
-            (settings.gitlab_username, settings.gitlab_token)
-            if settings.gitlab_username and settings.gitlab_token
-            else None
-        )
+        if settings.gitlab_username and settings.gitlab_token:
+            auth = DigestAuth(settings.gitlab_username, settings.gitlab_token)
 
     return AsyncClient(auth=auth, headers=headers)
 

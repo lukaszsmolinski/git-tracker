@@ -1,4 +1,5 @@
 from uuid import uuid4, UUID
+import bcrypt
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
@@ -8,8 +9,7 @@ from app.models.tracked_repository import TrackedRepository
 from app.schemas.collection_schemas import (
     CollectionCreate,
     CollectionAddRepository,
-    CollectionRemoveRepository,
-    CollectionDelete
+    CollectionRemoveRepository
 )
 
 
@@ -17,8 +17,16 @@ def create(
     *, db: Session, collection_in: CollectionCreate
 ) -> Collection:
     """Creates an empty collection."""
-    token = str(uuid4()) if collection_in.protected else None
-    collection = Collection(**collection_in.dict(), token=token)
+    hashed = None
+    if collection_in.password:
+        password = collection_in.password.encode("UTF-8")
+        hashed = bcrypt.hashpw(password, bcrypt.gensalt()).decode("UTF-8")
+
+    collection = Collection(
+        **collection_in.dict(exclude={"password"}), 
+        password=hashed, 
+        protected=hashed is not None
+    )
     db.add(collection)
     db.commit()
     db.refresh(collection)
@@ -65,12 +73,9 @@ async def add_repository(
 ) -> Collection:
     """Adds repository to collection.
 
-    If the repository doesn't exist or authorization fails, an HTTPException
-    is raised. If the repository has already been added to the collection,
-    nothing happens.
+    If the repository doesn't exist, HTTPException is raised. If 
+    the repository has already been added to the collection, nothing happens.
     """
-    _assert_authorized(collection, collection_in.token)
-
     repository = await repository_service.add(
         db=db,
         name=collection_in.repository_name,
@@ -104,11 +109,9 @@ def remove_repository(
 ) -> Collection:
     """Removes repository from collection.
 
-    If the repository doesn't exist, it hasn't been added to the collection
-    or authorization fails, an HTTPException is raised.
+    If the repository doesn't exist or it hasn't been added to the collection, 
+    an HTTPException is raised.
     """
-    _assert_authorized(collection, collection_in.token)
-
     repository = repository_service.get(
         db=db,
         name=collection_in.repository_name,
@@ -136,22 +139,7 @@ def remove_repository(
     return collection
 
 
-def delete(
-    *, db: Session, collection: Collection, collection_in: CollectionDelete
-) -> None:
-    """Deletes coollection.
-
-    If authorization fails, an HTTPException is raised.
-    """
-    _assert_authorized(collection, collection_in.token)
+def delete(*, db: Session, collection: Collection) -> None:
+    """Deletes coollection."""
     db.delete(collection)
     db.commit()
-
-
-def _assert_authorized(collection: Collection, token: str | None) -> None:
-    """Checks if the token is valid for the collection.
-
-    If the token is invalid, an HTTPException is raised.
-    """
-    if collection.protected and collection.token != token:
-        raise HTTPException(status_code=401, detail="Wrong token.")

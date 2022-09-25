@@ -14,7 +14,7 @@ class Collection(Base):
     name = Column(String(100))
     created_at = Column(DateTime, server_default=func.now())
     protected = Column(Boolean)
-    token = Column(String, nullable=True)
+    password = Column(String, nullable=True)
 
     repositories = relationship(
         "Repository",
