@@ -15,6 +15,7 @@ class Repository(Base):
     owner = Column(String)
     provider = Column(Enum(Provider))
     last_commit_at = Column(DateTime, nullable=True)
+    last_release_at = Column(DateTime, nullable=True)
 
     collections = relationship(
         "Collection",

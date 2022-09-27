@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from json import dumps, loads
 from fastapi import HTTPException
 from httpx import AsyncClient
@@ -20,6 +21,20 @@ async def get(*, db: Session, provider: Provider, endpoint: str) -> dict | None:
         return _handle_response(
             db=db, provider=provider, response = await client.get(url), url=url
         )
+
+
+def parse_date(*, date: str, provider: Provider) -> datetime:
+    """Parse date to UTC datetime."""
+    if Provider.GITHUB == provider:
+        format = "%Y-%m-%dT%H:%M:%SZ"
+        return datetime.strptime(date, format).replace(tzinfo=timezone.utc)
+    if Provider.GITLAB == provider:
+        # GitLab returns data in two formats.
+        if date[-1] == "Z":
+            format = "%Y-%m-%dT%H:%M:%S.%fZ"
+            return datetime.strptime(date, format).replace(tzinfo=timezone.utc)
+        else:
+            return datetime.fromisoformat(date).astimezone(timezone.utc)
 
 
 def _handle_response(

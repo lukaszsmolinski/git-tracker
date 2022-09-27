@@ -11,6 +11,7 @@ class Repository(BaseModel):
     owner: str
     provider: Provider
     last_commit_at: datetime | None
+    last_release_at: datetime | None
 
     class Config:
         orm_mode = True

@@ -78,6 +78,35 @@ async def test_get_304_after_200(db, provider, endpoint):
 
 
 @pytest.mark.parametrize(
+    "date, provider, date_expected", [
+        [
+            "2021-09-20T09:06:12.201+00:00", 
+            Provider.GITLAB, 
+            "2021-09-20 09:06:12.201000+00:00"
+        ],
+        [
+            "2021-09-20T09:06:12.201+02:00", 
+            Provider.GITLAB, 
+            "2021-09-20 07:06:12.201000+00:00"
+        ],
+        [
+            "2019-01-03T01:56:19.539Z", 
+            Provider.GITLAB, 
+            "2019-01-03 01:56:19.539000+00:00"
+        ],
+        [
+            "2013-02-27T19:35:32Z", 
+            Provider.GITHUB, 
+            "2013-02-27 19:35:32+00:00"
+        ]
+    ]
+)
+def test_parse_date(date, provider, date_expected):
+    date_received = provider_service.parse_date(date=date, provider=provider)
+    assert str(date_received) == date_expected
+
+
+@pytest.mark.parametrize(
     "provider, endpoint, expected", [
         [
             Provider.GITHUB, 

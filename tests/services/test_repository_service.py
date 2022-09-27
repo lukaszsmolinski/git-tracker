@@ -124,34 +124,37 @@ async def test_add_twice(db, data):
 
 
 @pytest.mark.parametrize(
-    "data",
+    "data, has_release",
     [
-        {
+        [{
             "name": "Hello-World",
             "owner": "octocat",
             "provider": Provider.GITHUB
-        },
-        {
+        }, False],
+        [{
+            "name": "linguist",
+            "owner": "github",
+            "provider": Provider.GITHUB
+        }, True],
+        [{
             "name": "gitlab",
             "owner": "gitlab-org",
             "provider": Provider.GITLAB
-        }
+        }, True]
     ]
 )
 @pytest.mark.anyio
-async def test_update(db, data):
-    data = {
-        "name": "Hello-World",
-        "owner": "octocat",
-        "provider": Provider.GITHUB
-    }
+async def test_update(db, data, has_release):
     repo = await repository_service.add(db=db, **data)
 
     await repository_service.update(db=db, repo=repo)
-    repo = repository_service.get(db=db, **data)
 
-    assert repo is not None
+    repo = repository_service.get(db=db, **data)
     assert repo.last_commit_at is not None
+    if has_release:
+        assert repo.last_release_at is not None
+    else:
+        assert repo.last_release_at is None
 
 
 @pytest.mark.parametrize(
@@ -171,12 +174,7 @@ async def test_update(db, data):
 )
 @pytest.mark.anyio
 async def test_update_when_repo_no_longer_exists(db, data):
-    # Repo doesn't exist so we must add it artificially to the database
-    data = {
-        "name": "no-longer-exists",
-        "owner": "dsdfsdfsd",
-        "provider": Provider.GITHUB
-    }
+    # Repo doesn't exist so we must add it artificially to the database.
     repo = Repository(**data)
     db.add(repo)
     db.commit()
@@ -203,8 +201,9 @@ async def test_update_when_repo_no_longer_exists(db, data):
     ]
 )
 @pytest.mark.anyio
-async def test_assert_exists_when_repo_exists(db, data):
+async def test_exists_and_assert_exists_when_repo_exists(db, data):
     await repository_service._assert_exists(db=db, **data)
+    assert await repository_service._exists(db=db, **data)
 
 
 @pytest.mark.parametrize(
@@ -228,3 +227,4 @@ async def test_assert_exists_when_repo_does_not_exist(db, data):
         await repository_service._assert_exists(db=db, **data)
 
     assert excinfo.value.status_code == 404
+    assert not await repository_service._exists(db=db, **data)

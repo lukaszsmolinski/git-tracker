@@ -45,44 +45,94 @@ async def add(
 
 
 async def update(*, db: Session, repo: Repository) -> None:
-    """Updates repository data.
+    """Updates the repository data.
 
     If the repository no longer exists, removes it.
     """
-    if Provider.GITHUB == repo.provider:
-        endpoint = f"/repos/{repo.owner}/{repo.name}/commits?per_page=1"
-    elif Provider.GITLAB == repo.provider:
-        endpoint = f"/projects/{repo.owner}%2F{repo.name}/repository/commits?per_page=1"
+    exists = await _exists(
+        db=db, name=repo.name, owner=repo.owner, provider=repo.provider
+    )
+    if not exists:
+        db.delete(repo)
+        db.commit()
+        return
 
+    if Provider.GITHUB == repo.provider:
+        await _update_github(db=db, repo=repo)
+    if Provider.GITLAB == repo.provider:
+        await _update_gitlab(db=db, repo=repo)
+
+
+async def _update_github(*, db: Session, repo: Repository):
+    """Updates GitHub repo data."""
+    # update last_commit_at
+    endpoint = f"/repos/{repo.owner}/{repo.name}/commits?per_page=1"
     data = await provider_service.get(
         db=db, provider=repo.provider, endpoint=endpoint
     )
-    if data is None:
-        db.delete(repo)
-    elif len(data) > 0:
-        if Provider.GITHUB == repo.provider:
-            date = data[0]["commit"]["author"]["date"]
-            repo.last_commit_at = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ")
-        elif Provider.GITLAB == repo.provider:
-            date = data[0]["committed_date"]
-            repo.last_commit_at = (
-                datetime.fromisoformat(date).astimezone(timezone.utc)
-            )
+    if len(data) > 0:
+        date = data[0]["commit"]["author"]["date"]
+        repo.last_commit_at = provider_service.parse_date(
+            date=date, provider=repo.provider
+        )
+
+    # update last_release_at
+    endpoint = f"/repos/{repo.owner}/{repo.name}/releases?per_page=1"
+    data = await provider_service.get(
+        db=db, provider=repo.provider, endpoint=endpoint
+    )
+    if len(data) > 0:
+        date = data[0]["published_at"]
+        repo.last_release_at = provider_service.parse_date(
+            date=date, provider=repo.provider
+        )
+
     db.commit()
+
+
+async def _update_gitlab(*, db: Session, repo: Repository) -> None:
+    """Updates GitLab repo data."""
+    # update last_commit_at
+    endpoint = f"/projects/{repo.owner}%2F{repo.name}/repository/commits?per_page=1"
+    data = await provider_service.get(
+        db=db, provider=repo.provider, endpoint=endpoint
+    )
+    if len(data) > 0:
+        date = data[0]["committed_date"]
+        repo.last_commit_at = provider_service.parse_date(
+            date=date, provider=repo.provider
+        )
+
+    # update last_release_at
+    endpoint = f"/projects/{repo.owner}%2F{repo.name}/releases?per_page=1"
+    data = await provider_service.get(
+        db=db, provider=repo.provider, endpoint=endpoint
+    )
+    if len(data) > 0:
+        date = data[0]["released_at"]
+        repo.last_release_at = provider_service.parse_date(
+            date=date, provider=repo.provider
+        )
+
+    db.commit()
+
+
+async def _exists(
+    *, db: Session, name: str, owner: str, provider: Provider
+) -> bool:
+    """Checks if the repository exists."""
+    if Provider.GITHUB == provider:
+        endpoint = f"/repos/{owner}/{name}"
+    if Provider.GITLAB == provider:
+        endpoint = f"/projects/{owner}%2F{name}"
+
+    data = await provider_service.get(db=db, provider=provider, endpoint=endpoint)
+    return data is not None
 
 
 async def _assert_exists(
     *, db: Session, name: str, owner: str, provider: Provider
 ) -> None:
-    """Checks if repository with given name, owner and provider exists.
-
-    If it doesn't raises HTTPException.
-    """
-    if Provider.GITHUB == provider:
-        endpoint = f"/repos/{owner}/{name}"
-    elif Provider.GITLAB == provider:
-        endpoint = f"/projects/{owner}%2F{name}"
-
-    data = await provider_service.get(db=db, provider=provider, endpoint=endpoint)
-    if data is None:
+    """Raises HTTPException if the repository does not exist."""
+    if not await _exists(db=db, name=name, owner=owner, provider=provider):
         raise HTTPException(status_code=404, detail="Repository not found.")
