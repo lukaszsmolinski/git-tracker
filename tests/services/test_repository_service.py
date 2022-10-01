@@ -6,21 +6,34 @@ from app.models.repository import Repository
 from app.services import repository_service
 
 
-@pytest.mark.parametrize(
-    "data",
-    [
-        {
-            "name": "Hello-World",
-            "owner": "octocat",
-            "provider": Provider.GITHUB
-        },
-        {
-            "name": "gitlab",
-            "owner": "gitlab-org",
-            "provider": Provider.GITLAB
-        }
-    ]
-)
+EXISTING_REPOS_DATA = [
+    {
+        "name": "Hello-World",
+        "owner": "octocat",
+        "provider": Provider.GITHUB
+    },
+    {
+        "name": "gitlab",
+        "owner": "gitlab-org",
+        "provider": Provider.GITLAB
+    }
+]
+
+NONEXISTENT_REPOS_DATA = [
+    {
+        "name": "does-not-exist",
+        "owner": "asdfdsasddsfafdsa",
+        "provider": Provider.GITHUB
+    },
+    {
+        "name": "does-not-exist",
+        "owner": "sadkdsaklsdj",
+        "provider": Provider.GITLAB
+    }
+]
+
+
+@pytest.mark.parametrize("data", EXISTING_REPOS_DATA)
 @pytest.mark.anyio
 async def test_get(db, data):
     await repository_service.add(db=db, **data)
@@ -30,42 +43,14 @@ async def test_get(db, data):
     assert data.items() <= repo.__dict__.items()
 
 
-@pytest.mark.parametrize(
-    "data",
-    [
-        {
-            "name": "Hello-World",
-            "owner": "octocat",
-            "provider": Provider.GITHUB
-        },
-        {
-            "name": "gitlab",
-            "owner": "gitlab-org",
-            "provider": Provider.GITLAB
-        }
-    ]
-)
-def test_get_when_does_not_exist(db, data):
+@pytest.mark.parametrize("data", EXISTING_REPOS_DATA + NONEXISTENT_REPOS_DATA)
+def test_get_when_was_not_added(db, data):
     repo = repository_service.get(db=db, **data)
 
     assert repo is None
 
 
-@pytest.mark.parametrize(
-    "data",
-    [
-        {
-            "name": "Hello-World",
-            "owner": "octocat",
-            "provider": Provider.GITHUB
-        },
-        {
-            "name": "gitlab",
-            "owner": "gitlab-org",
-            "provider": Provider.GITLAB
-        }
-    ]
-)
+@pytest.mark.parametrize("data", EXISTING_REPOS_DATA)
 @pytest.mark.anyio
 async def test_add(db, data):
     repo = await repository_service.add(db=db, **data)
@@ -74,21 +59,7 @@ async def test_add(db, data):
     assert repo.last_commit_at is None
 
 
-@pytest.mark.parametrize(
-    "data",
-    [
-        {
-            "name": "does-not-exist",
-            "owner": "asdfdsasddsfafdsa",
-            "provider": Provider.GITHUB
-        },
-        {
-            "name": "does-not-exist",
-            "owner": "sadkdsaklsdj",
-            "provider": Provider.GITLAB
-        }
-    ]
-)
+@pytest.mark.parametrize("data", NONEXISTENT_REPOS_DATA)
 @pytest.mark.anyio
 async def test_add_when_repo_does_not_exist(db, data):
     with pytest.raises(HTTPException) as excinfo:
@@ -98,21 +69,7 @@ async def test_add_when_repo_does_not_exist(db, data):
     assert repository_service.get(db=db, **data) is None
 
 
-@pytest.mark.parametrize(
-    "data",
-    [
-        {
-            "name": "Hello-World",
-            "owner": "octocat",
-            "provider": Provider.GITHUB
-        },
-        {
-            "name": "gitlab",
-            "owner": "gitlab-org",
-            "provider": Provider.GITLAB
-        }
-    ]
-)
+@pytest.mark.parametrize("data", EXISTING_REPOS_DATA)
 @pytest.mark.anyio
 async def test_add_twice(db, data):
     rows_before = db.query(Repository).count()
@@ -157,21 +114,7 @@ async def test_update(db, data, has_release):
         assert repo.last_release_at is None
 
 
-@pytest.mark.parametrize(
-    "data",
-    [
-        {
-            "name": "does-not-exist",
-            "owner": "asdfdsasddsfafdsa",
-            "provider": Provider.GITHUB
-        },
-        {
-            "name": "does-not-exist",
-            "owner": "sadkdsaklsdj",
-            "provider": Provider.GITLAB
-        }
-    ]
-)
+@pytest.mark.parametrize("data", NONEXISTENT_REPOS_DATA)
 @pytest.mark.anyio
 async def test_update_when_repo_no_longer_exists(db, data):
     # Repo doesn't exist so we must add it artificially to the database.
@@ -185,42 +128,14 @@ async def test_update_when_repo_no_longer_exists(db, data):
     assert repository_service.get(db=db, **data) is None
 
 
-@pytest.mark.parametrize(
-    "data",
-    [
-        {
-            "name": "Hello-World",
-            "owner": "octocat",
-            "provider": Provider.GITHUB
-        },
-        {
-            "name": "gitlab",
-            "owner": "gitlab-org",
-            "provider": Provider.GITLAB
-        }
-    ]
-)
+@pytest.mark.parametrize("data", EXISTING_REPOS_DATA)
 @pytest.mark.anyio
 async def test_exists_and_assert_exists_when_repo_exists(db, data):
     await repository_service._assert_exists(db=db, **data)
     assert await repository_service._exists(db=db, **data)
 
 
-@pytest.mark.parametrize(
-    "data",
-    [
-        {
-            "name": "does-not-exist",
-            "owner": "asdfdsasddsfafdsa",
-            "provider": Provider.GITHUB
-        },
-        {
-            "name": "does-not-exist",
-            "owner": "sadkdsaklsdj",
-            "provider": Provider.GITLAB
-        }
-    ]
-)
+@pytest.mark.parametrize("data", NONEXISTENT_REPOS_DATA)
 @pytest.mark.anyio
 async def test_assert_exists_when_repo_does_not_exist(db, data):
     with pytest.raises(HTTPException) as excinfo:

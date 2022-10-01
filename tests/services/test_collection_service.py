@@ -56,37 +56,26 @@ def test_get_when_collection_does_not_exist(db):
     assert collection is None
 
 
-@pytest.mark.anyio
-async def test_get_when_collection_not_empty(db):
-    collection = collection_service.create(
+def test_get_when_collection_not_empty(db, collection_not_empty):
+    collection = collection_service.get(
         db=db,
-        collection_in=CollectionCreate(name="collection1")
+        collection_id=collection_not_empty.id
     )
 
-    collection_in = CollectionAddRepository(
-        repository_name="Hello-World",
-        repository_owner="octocat",
-        provider=Provider.GITHUB
-    )
-    collection = await collection_service.add_repository(
-        db=db,
-        collection=collection,
-        collection_in=collection_in
-    )
-
-    assert len(collection.repositories) == 1
-    assert collection.repositories[0].name == collection_in.repository_name
-    assert collection.repositories[0].owner == collection_in.repository_owner
-    assert collection.repositories[0].provider == Provider.GITHUB
+    assert len(collection.repositories) > 1
 
 
 @pytest.mark.anyio
-async def test_add_repository(db):
-    collection = collection_service.create(
-        db=db,
-        collection_in=CollectionCreate(name="collection1")
-    )
+async def test_update(db, collection_not_empty, mocker):
+    mock = mocker.patch("app.services.repository_service.update")
 
+    await collection_service.update(db=db, collection=collection_not_empty)
+
+    assert mock.call_count == len(collection_not_empty.repositories)
+
+
+@pytest.mark.anyio
+async def test_add_repository(db, collection):
     collection_in = CollectionAddRepository(
         repository_name="Hello-World",
         repository_owner="octocat",
@@ -105,12 +94,7 @@ async def test_add_repository(db):
 
 
 @pytest.mark.anyio
-async def test_add_repository_twice(db):
-    collection = collection_service.create(
-        db=db,
-        collection_in=CollectionCreate(name="collection1")
-    )
-
+async def test_add_repository_twice(db, collection):
     collection_in = CollectionAddRepository(
         repository_name="Hello-World",
         repository_owner="octocat",
@@ -130,13 +114,13 @@ async def test_add_repository_twice(db):
     assert len(collection.repositories) == 1
     assert collection.repositories[0].name == collection_in.repository_name
     assert collection.repositories[0].owner == collection_in.repository_owner
+    assert collection.repositories[0].provider == collection_in.provider
 
 
 @pytest.mark.parametrize(
-    "collection_in_create, collection_in_add, code",
+    "collection_in_add, code",
     [
         [
-            CollectionCreate(name="collection1"),
             CollectionAddRepository(
                 repository_name="does-not-exist",
                 repository_owner="fsjsdfkjdsfadasf",
@@ -148,13 +132,8 @@ async def test_add_repository_twice(db):
 )
 @pytest.mark.anyio
 async def test_add_repository_fail_with_exception(
-    db, collection_in_create, collection_in_add, code
+    db, collection, collection_in_add, code
 ):
-    collection = collection_service.create(
-        db=db,
-        collection_in=collection_in_create
-    )
-
     with pytest.raises(HTTPException) as excinfo:
         await collection_service.add_repository(
             db=db,
@@ -168,11 +147,7 @@ async def test_add_repository_fail_with_exception(
 
 
 @pytest.mark.anyio
-async def test_remove_repository(db):
-    collection = collection_service.create(
-        db=db,
-        collection_in=CollectionCreate(name="collection1")
-    )
+async def test_remove_repository(db, collection):
     collection_in_add = CollectionAddRepository(
         repository_name="Hello-World",
         repository_owner="octocat",
@@ -194,13 +169,7 @@ async def test_remove_repository(db):
 
 
 @pytest.mark.parametrize("provider", [Provider.GITHUB, Provider.GITLAB])
-def test_remove_repository_that_was_not_added(db, provider):
-    collection_in_create = CollectionCreate(name="collection1")
-    collection = collection_service.create(
-        db=db,
-        collection_in=collection_in_create
-    )
-
+def test_remove_repository_that_was_not_added(db, collection, provider):
     with pytest.raises(HTTPException) as excinfo:
         collection_service.remove_repository(
             db=db,
@@ -213,13 +182,7 @@ def test_remove_repository_that_was_not_added(db, provider):
     assert len(collection.repositories) == 0
 
 
-def test_delete(db):
-    collection_in_create = CollectionCreate(name="collection1")
-    collection = collection_service.create(
-        db=db,
-        collection_in=collection_in_create
-    )
-
+def test_delete(db, collection):
     collection_service.delete(
         db=db,
         collection=collection

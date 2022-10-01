@@ -61,8 +61,7 @@ async def get_and_update(
     collection = get(db=db, collection_id=collection_id)
     if collection is not None:
         await update(db=db, collection=collection)
-        db.refresh(collection)
-    return collection
+    return get(db=db, collection_id=collection_id)
 
 
 async def add_repository(
