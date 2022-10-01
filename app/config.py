@@ -8,11 +8,11 @@ class Settings(BaseSettings):
     github_token: str | None
     gitlab_username: str | None
     gitlab_token: str | None
-    postgres_user: str
+    postgres_user: str = "postgres"
     postgres_password: str
     postgres_server: str = "db"
     postgres_port: int = 5432
-    postgres_db: str
+    postgres_db: str = "db"
 
     class Config:
         case_sensitive = False
